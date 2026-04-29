@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Panther Baseball — Advanced At-Bat Tracker</title>
+<style>
+:root {
+  --bg:#f4f5f7;
+  --card:#ffffff;
+  --ink:#111827;
+  --muted:#6b7280;
+  --line:#e5e7eb;
+  --maroon:#8B0000;
+  --maroon-dark:#650000;
+  --black:#111111;
+  --gray:#f3f4f6;
+  --danger:#b91c1c;
+  --good:#0B6B2B;
+  --warn:#b45309;
+  --blue:#1d4ed8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:linear-gradient(135deg,var(--maroon),#111);color:#fff;padding:14px;position:sticky;top:0;z-index:20}
+.wrap{max-width:1200px;margin:0 auto;padding:12px}
+.brand{display:flex;align-items:center;gap:13px;justify-content:space-between;flex-wrap:wrap}
+.brand-left{display:flex;align-items:center;gap:13px}
+.logo{width:74px;height:54px;object-fit:contain;background:var(--maroon);border-radius:10px;border:1px solid rgba(255,255,255,.25);padding:4px}
+.team{font-size:25px;font-weight:950;text-transform:uppercase;letter-spacing:.06em;line-height:1}
+.tool{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#f1f1f1;margin-top:4px}
+.tagline{font-size:12px;color:#e5e7eb;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tab{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25);padding:10px 13px;border-radius:999px;font-weight:900;cursor:pointer}
+.tab.active{background:#fff;color:#111}
+.page{display:none}
+.page.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 24px rgba(15,23,42,.07);margin-bottom:12px}
+.span-4{grid-column:span 4}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-7{grid-column:span 7}.span-8{grid-column:span 8}.span-12{grid-column:span 12}
+h2{font-size:20px;margin:0 0 12px} h3{font-size:13px;margin:12px 0 7px;text-transform:uppercase;letter-spacing:.04em;color:#374151}
+label{display:block;font-size:12px;font-weight:900;color:#374151;margin:8px 0 4px;text-transform:uppercase;letter-spacing:.04em}
+input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:11px;padding:10px;font-size:15px;background:#fff}
+textarea{min-height:74px;resize:vertical}
+button{border:0;border-radius:12px;padding:11px 13px;background:var(--maroon);color:#fff;font-weight:900;font-size:15px;cursor:pointer}
+button:hover{background:var(--maroon-dark)}
+button.secondary{background:#e5e7eb;color:#111} button.danger{background:var(--danger)} button.warn{background:var(--warn)} button.blue{background:var(--blue)}
+button.selected{outline:3px solid #b6b6b6;background:#111!important;color:#fff!important}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+.button-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.button-grid.three{grid-template-columns:repeat(3,1fr)}.button-grid.two{grid-template-columns:repeat(2,1fr)}
+.bigbtn{min-height:54px;font-size:16px;line-height:1.1}
+.flex-between{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.tiny{font-size:12px;color:var(--muted)}
+.pill{display:inline-flex;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:900;white-space:nowrap}
+.pill.good{background:#f4f4f4;color:var(--good)}.pill.bad{background:#fef2f2;color:var(--danger)}.pill.warn{background:#fffbeb;color:var(--warn)}
+.current-hitter{font-size:22px;font-weight:950;margin:2px 0 4px}
+.score{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.scorebox{background:#f9fafb;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.scorebox .num{font-size:28px;font-weight:950}.scorebox .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:900}
+.dugout-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px}
+.dugout-stat{background:#111;color:white;border-radius:14px;padding:10px;border:1px solid #2b2b2b}
+.dugout-stat .lbl{color:#d1d5db;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+.dugout-stat .num{font-size:22px;font-weight:950;margin-top:2px}
+.mini-log{display:flex;flex-direction:column;gap:8px;max-height:330px;overflow:auto}
+.mini-pitch{border:1px solid var(--line);border-radius:12px;padding:9px;background:#f9fafb;font-size:13px}
+.lineup-list{display:grid;gap:8px}
+.lineup-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:12px;background:#f9fafb}
+.lineup-item.active{border-color:#b6b6b6;background:#f4f4f4}
+.table-wrap{overflow-x:auto;max-height:520px;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+th{position:sticky;top:0;background:#f9fafb;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.ab-card{border:1px solid var(--line);border-radius:12px;padding:10px;background:#f9fafb;margin-bottom:8px}
+.trend-up{color:#b91c1c;font-weight:950}.trend-down{color:#047857;font-weight:950}.trend-neutral{color:#6b7280;font-weight:950}
+.profile-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.profile-card{border:1px solid var(--line);border-radius:14px;background:#fafafa;padding:12px}
+.profile-name{font-size:18px;font-weight:950;margin-bottom:6px}
+.profile-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:8px}
+.profile-mini{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px}
+.profile-mini .lbl{font-size:10px;color:var(--muted);font-weight:900;text-transform:uppercase}
+.profile-mini .num{font-size:18px;font-weight:950}
+.footer{margin-top:18px;padding:14px;color:#d1d5db;background:#111;border-top:4px solid var(--maroon);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.footer img{height:32px;width:46px;object-fit:contain;vertical-align:middle;margin-right:8px}
+@media(max-width:900px){.span-4,.span-5,.span-6,.span-7,.span-8{grid-column:span 12}.dugout-bar{grid-template-columns:repeat(2,1fr)}.profile-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.wrap{padding:10px}.team{font-size:20px}.tool{font-size:11px}.logo{width:58px;height:44px}.button-grid,.button-grid.two,.button-grid.three{grid-template-columns:repeat(2,1fr)}button{font-size:14px;padding:10px 9px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap" style="padding:0;">
+    <div class="brand">
+      <div class="brand-left">
+        <img class="logo" src="data:image/jpeg;base64,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" alt="Panther Baseball logo"/>
+        <div>
+          <div class="team">Panther Baseball</div>
+          <div class="tool">Advanced At-Bat Tracker</div>
+        </div>
+      </div>
+      <div class="tagline">Built for our team. Driven by details.</div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-page="game">Game</button>
+      <button class="tab" data-page="reports">Reports</button>
+      <button class="tab" data-page="profiles">Profiles</button>
+      <button class="tab" data-page="logs">Logs</button>
+      <button class="tab" data-page="setup">Setup</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+<section id="game" class="page active">
+  <div class="dugout-bar" id="dugoutSummaryBar"></div>
+  <div class="grid">
+    <div class="card span-4">
+      <h2>Current Hitter</h2>
+      <div class="current-hitter" id="currentHitterName">No hitter selected</div>
+      <div class="tiny" id="currentGameInfo"></div>
+      <div class="score">
+        <div class="scorebox"><div class="num" id="balls">0</div><div class="lbl">Balls</div></div>
+        <div class="scorebox"><div class="num" id="strikes">0</div><div class="lbl">Strikes</div></div>
+        <div class="scorebox"><div class="num" id="abPitchCount">0</div><div class="lbl">Pitches</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="secondary" id="prevHitterBtn">Prev</button>
+        <button class="secondary" id="nextHitterBtn">Next</button>
+        <button class="warn" id="undoPitchBtn">Undo Pitch</button>
+      </div>
+      <label>Manual Hitter Select</label>
+      <select id="hitterSelect"></select>
+
+      <label>Pitcher Hand This AB</label>
+      <select id="abPitcherHand">
+        <option value="">Use Game Default</option>
+        <option>RHP</option>
+        <option>LHP</option>
+      </select>
+    </div>
+
+    <div class="card span-8">
+      <h2>Chart Pitch</h2>
+      <h3>1. Pitch Type</h3>
+      <div class="button-grid three" id="pitchTypeBtns">
+        <button class="bigbtn" data-value="FB">FB</button>
+        <button class="bigbtn" data-value="Cutter">Cutter</button>
+        <button class="bigbtn" data-value="SL">SL</button>
+        <button class="bigbtn" data-value="CB">CB</button>
+        <button class="bigbtn" data-value="CH">CH</button>
+        <button class="bigbtn" data-value="SPL">SPL</button>
+      </div>
+
+      <h3>2. Zone</h3>
+      <div class="button-grid three" id="zoneBtns">
+        <button class="bigbtn" data-value="IN">In Zone</button>
+        <button class="bigbtn" data-value="OUT">Out Zone</button>
+        <button class="bigbtn secondary" data-value="EDGE">Edge</button>
+      </div>
+
+      <h3>3. Decision</h3>
+      <div class="button-grid two" id="decisionBtns">
+        <button class="bigbtn" data-value="Swing">Swing</button>
+        <button class="bigbtn secondary" data-value="Take">Take</button>
+      </div>
+
+      <h3>4. Result</h3>
+      <div class="button-grid three" id="pitchResultBtns">
+        <button class="bigbtn secondary" data-value="Ball">Ball</button>
+        <button class="bigbtn secondary" data-value="Called Strike">Called Strike</button>
+        <button class="bigbtn" data-value="Foul">Foul</button>
+        <button class="bigbtn danger" data-value="Whiff">Whiff</button>
+        <button class="bigbtn blue" data-value="In Play">In Play</button>
+        <button class="bigbtn warn" data-value="HBP">HBP</button>
+      </div>
+
+      <h3>5. Contact Quality</h3>
+      <div class="button-grid" id="contactBtns">
+        <button class="bigbtn" data-value="Hard">Hard</button>
+        <button class="bigbtn secondary" data-value="Medium">Medium</button>
+        <button class="bigbtn secondary" data-value="Weak">Weak</button>
+        <button class="bigbtn danger" data-value="None">None</button>
+      </div>
+
+      <div class="btn-row">
+        <button id="savePitchBtn">Save Pitch</button>
+        <button class="secondary" id="clearPitchBtn">Clear Pitch</button>
+      </div>
+      <div class="tiny" id="pitchPreview">Select pitch details.</div>
+    </div>
+
+    <div class="card span-5">
+      <div class="flex-between">
+        <h2>Current AB Log</h2>
+        <span class="pill" id="autoTags">Live tags</span>
+      </div>
+      <div class="mini-log" id="currentPitchLog"></div>
+    </div>
+
+    <div class="card span-7">
+      <h2>End At-Bat</h2>
+      <label>Pitcher Hand This AB</label>
+      <select id="endAbPitcherHand">
+        <option value="">Use Game Default</option>
+        <option>RHP</option>
+        <option>LHP</option>
+      </select>
+      <label>AB Result</label>
+      <select id="abResult">
+        <option value="">Choose result...</option>
+        <option>1B</option><option>2B</option><option>3B</option><option>HR</option>
+        <option>BB</option><option>HBP</option><option>ROE</option>
+        <option>K</option><option>Groundout</option><option>Flyout</option>
+        <option>Lineout</option><option>Popout</option><option>FC</option>
+        <option>Sac Fly</option><option>Sac Bunt</option>
+      </select>
+      <label>Quality AB?</label>
+      <select id="qab"><option>No</option><option>Yes</option></select>
+      <label>QAB Reason</label>
+      <select id="qabReason">
+        <option value="">N/A</option><option>Hit</option><option>Walk/HBP</option><option>6+ Pitch AB</option><option>Hard Contact</option>
+        <option>RBI</option><option>Moved Runner</option><option>Productive Out</option><option>Good 2K Battle</option>
+      </select>
+      <label>RBI</label><input type="number" id="rbi" value="0" min="0" max="10"/>
+      <label>Notes</label><textarea id="abNotes" placeholder="Example: Chased two breaking balls away. Late on FB in-zone."></textarea>
+      <div class="btn-row">
+        <button id="endAbBtn">Save / End AB</button>
+        <button class="danger" id="discardAbBtn">Discard Current AB</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="reports" class="page">
+  <div class="grid">
+    <div class="card span-12">
+      <div class="flex-between">
+        <div>
+          <h2>Season vs Recent Trends</h2>
+          <div class="tiny">Recent defaults to last 3 games. Arrows compare recent to season.</div>
+        </div>
+        <div style="min-width:220px">
+          <label style="margin-top:0">View</label><select id="reportPlayer"></select>
+          <label>Recent Window</label>
+          <select id="recentWindow"><option value="1">Last Game</option><option value="3" selected>Last 3 Games</option><option value="5">Last 5 Games</option><option value="10">Last 10 Games</option></select>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table><thead><tr><th>Metric</th><th>Season</th><th>Recent</th><th>Trend</th><th>Read</th></tr></thead><tbody id="trendRows"></tbody></table>
+      </div>
+      <div class="tiny" id="trendNote" style="margin-top:8px"></div>
+    </div>
+    <div class="card span-6">
+      <h2>Pitch Type Breakdown</h2>
+      <div class="table-wrap"><table><thead><tr><th>Pitch</th><th>Total</th><th>Chase%</th><th>Whiff%</th><th>Foul%</th><th>Hard%</th><th>AVG</th></tr></thead><tbody id="pitchBreakdown"></tbody></table></div>
+    </div>
+    <div class="card span-6">
+      <h2>AVG by Count — Selected View</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Count</th><th>Hits</th><th>AB</th><th>AVG</th></tr></thead>
+          <tbody id="countAvgRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    
+    <div class="card span-12">
+      <h2>Pitch × Count Performance</h2>
+      <div id="pitchCountMatrix"></div>
+    </div>
+
+    <div class="card span-12">
+      <h2>Player Summary — Season / Last 3</h2>
+      <div class="table-wrap"><table><thead><tr><th>Player</th><th>PA</th><th>QAB%</th><th>Chase%</th><th>FB Miss%</th><th>FB Foul%</th><th>AVG</th><th>Trend</th></tr></thead><tbody id="playerSummary"></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<section id="profiles" class="page">
+  <div class="card">
+    <div class="flex-between">
+      <div>
+        <h2>Panther Player Profiles</h2>
+        <div class="tiny">Season-long player cards with recent trend reads.</div>
+      </div>
+      <div style="min-width:220px">
+        <label style="margin-top:0">Profile Window</label>
+        <select id="profileWindow"><option value="1">Last Game</option><option value="3" selected>Last 3 Games</option><option value="5">Last 5 Games</option><option value="10">Last 10 Games</option></select>
+      </div>
+    </div>
+    <div class="profile-grid" id="profileCards" style="margin-top:12px"></div>
+  </div>
+</section>
+
+<section id="logs" class="page">
+  <div class="card">
+    <div class="flex-between">
+      <h2>Completed At-Bats</h2>
+      <div class="btn-row" style="margin:0">
+        <button class="secondary" id="exportPitchesBtn">Export Pitch CSV</button>
+        <button class="secondary" id="exportAbsBtn">Export AB CSV</button>
+        <button class="danger" id="clearGameBtn">Clear All Data</button>
+      </div>
+    </div>
+    <div id="abLog"></div>
+  </div>
+</section>
+
+<section id="setup" class="page">
+  <div class="grid">
+    <div class="card span-6">
+      <h2>Game Setup</h2>
+      <label>Game Date</label><input type="date" id="gameDate"/>
+      <label>Opponent</label><input type="text" id="gameOpponent" placeholder="Opponent"/>
+<label>Pitcher Hand</label>
+<select id="pitcherHand">
+<option value="">Select</option>
+<option>RHP</option>
+<option>LHP</option>
+</select>
+      <label>Team Name</label><input type="text" id="teamName" placeholder="Our team"/>
+      <div class="btn-row"><button id="saveGameInfoBtn">Save Game Info</button></div>
+      <p class="tiny">Season-long tracking: update date/opponent each game. Do not clear all data unless you want to reset the season.</p>
+    </div>
+    <div class="card span-6">
+      <h2>Lineup</h2>
+      <label>Add Player</label><input type="text" id="newPlayer" placeholder="Player name"/>
+      <div class="btn-row"><button id="addPlayerBtn">Add Player</button><button class="secondary" id="loadSampleBtn">Load Sample Lineup</button></div>
+      <div class="lineup-list" id="lineupList"></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div><img src="data:image/jpeg;base64,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" alt="Panther logo"/> Panther Baseball</div>
+  <div>Discipline. Compete. Together.</div>
+</footer>
+
+<script>
+const STORAGE_KEY = "panther_baseball_tracker_v2_fixed";
+const OLD_KEYS = ["advanced_ab_tracker_season_trends_v1","advanced_ab_tracker_v1","panther_baseball_tracker_v1"];
+const DEFAULT = {
+  game: { date: new Date().toISOString().slice(0,10), opponent: "", team: "Panther Baseball" },
+  lineup: [],
+  currentIndex: 0,
+  abs: [],
+  currentAB: { pitches: [], balls: 0, strikes: 0 }
+};
+let loaded = localStorage.getItem(STORAGE_KEY);
+if (!loaded) {
+  for (const k of OLD_KEYS) {
+    const old = localStorage.getItem(k);
+    if (old) { loaded = old; break; }
+  }
+}
+let state = JSON.parse(loaded || JSON.stringify(DEFAULT));
+let pitchDraft = { pitchType:"", zone:"", decision:"", result:"", contact:"" };
+const $ = id => document.getElementById(id);
+const esc = str => String(str ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function currentPlayer(){ return state.lineup[state.currentIndex] || ""; }
+function currentPitcherHand(){
+  const abHand = ($("abPitcherHand") && $("abPitcherHand").value) || ($("endAbPitcherHand") && $("endAbPitcherHand").value) || "";
+  return abHand || state.game.pitcherHand || "";
+}
+function pctValue(n,d){ return d ? (n/d)*100 : 0; }
+function fmtPct(v){ return Math.round(v) + "%"; }
+function isChase(p){ return p.decision === "Swing" && p.zone === "OUT"; }
+function isTakeStrike(p){ return p.decision === "Take" && (p.zone === "IN" || p.zone === "EDGE") && p.result === "Called Strike"; }
+function isWhiff(p){ return p.result === "Whiff"; }
+function isFoul(p){ return p.result === "Foul"; }
+function isHard(p){ return p.contact === "Hard"; }
+function isSwing(p){ return p.decision === "Swing"; }
+function isZone(p){ return p.zone === "IN" || p.zone === "EDGE"; }
+function isHitResult(r){ return ["1B","2B","3B","HR"].includes(r); }
+function isOfficialABResult(r){ return !["BB","HBP","Sac Fly","Sac Bunt"].includes(r); }
+function fmtAvg(h,ab){ return ab ? (h/ab).toFixed(3).replace(/^0/,"") : ".000"; }
+function terminalPitch(ab){ return ab && ab.pitches && ab.pitches.length ? ab.pitches[ab.pitches.length - 1] : null; }
+function avgForSubset(absList, filterFn){
+  let h = 0, abn = 0;
+  absList.forEach(ab => {
+    const p = terminalPitch(ab);
+    if(!p || !filterFn(p, ab)) return;
+    if(!isOfficialABResult(ab.result)) return;
+    abn++;
+    if(isHitResult(ab.result)) h++;
+  });
+  return {h, ab:abn, avg:fmtAvg(h,abn)};
+}
+function countBucket(count){ return count || "Unknown"; }
+function getAllPitches(absList=state.abs){ return absList.flatMap(ab => ab.pitches.map((p,i) => ({...p, abId:ab.id, player:ab.player, abResult:ab.result, pitchNo:i+1, gameDate:ab.gameDate || ab.date}))); }
+function getFilteredABs(player){ return (!player || player === "TEAM") ? state.abs : state.abs.filter(ab => ab.player === player); }
+function uniqueGameDates(absList){ return [...new Set(absList.map(a => a.gameDate || a.date).filter(Boolean))].sort(); }
+function recentABs(absList, nGames){ const dates = uniqueGameDates(absList); const keep = new Set(dates.slice(-Number(nGames))); return absList.filter(a => keep.has(a.gameDate || a.date)); }
+function calcReport(absList){
+  const pitches = getAllPitches(absList);
+  const pa = absList.length;
+  const qab = absList.filter(a => a.qab === "Yes").length;
+  const swings = pitches.filter(isSwing).length;
+  const zonePitches = pitches.filter(isZone).length;
+  const zoneSwings = pitches.filter(p => isZone(p) && isSwing(p)).length;
+  const outPitches = pitches.filter(p => p.zone === "OUT").length;
+  const chases = pitches.filter(isChase).length;
+  const takes = pitches.filter(p => p.decision === "Take").length;
+  const takeStrikes = pitches.filter(isTakeStrike).length;
+  const whiffs = pitches.filter(isWhiff).length;
+  const fouls = pitches.filter(isFoul).length;
+  const hard = pitches.filter(isHard).length;
+  const fb = pitches.filter(p => p.pitchType === "FB");
+  const fbSwings = fb.filter(isSwing).length;
+  return {
+    pa, pitches:pitches.length,
+    qabPct:pctValue(qab,pa),
+    chasePct:pctValue(chases,outPitches),
+    zoneSwingPct:pctValue(zoneSwings,zonePitches),
+    takeStrikePct:pctValue(takeStrikes,takes),
+    whiffPct:pctValue(whiffs,swings),
+    foulPct:pctValue(fouls,swings),
+    hardPct:pctValue(hard,pitches.length),
+    fbWhiffPct:pctValue(fb.filter(isWhiff).length,fbSwings),
+    fbFoulPct:pctValue(fb.filter(isFoul).length,fbSwings),
+    spinChasePct:pctValue(pitches.filter(p => ["SL","CB"].includes(p.pitchType) && isChase(p)).length, pitches.filter(p => ["SL","CB"].includes(p.pitchType) && p.zone === "OUT").length),
+    offspeedChasePct:pctValue(pitches.filter(p => ["CH","SPL"].includes(p.pitchType) && isChase(p)).length, pitches.filter(p => ["CH","SPL"].includes(p.pitchType) && p.zone === "OUT").length),
+    pitchesPerPA: pa ? pitches.length/pa : 0
+  };
+}
+function trend(metric, season, recent) {
+  const diff = recent - season;
+  if (Math.abs(diff) < 5) return { arrow:"➡️", cls:"trend-neutral", read:"Stable" };
+  const lowerIsBetter = ["chasePct","takeStrikePct","whiffPct","foulPct","fbWhiffPct","fbFoulPct","spinChasePct","offspeedChasePct"].includes(metric);
+  const better = lowerIsBetter ? diff < 0 : diff > 0;
+  return better ? { arrow:"⬇️", cls:"trend-down", read:"Improving" } : { arrow:"⬆️", cls:"trend-up", read:"Worse lately" };
+}
+function updateCountFromPitch(p){
+  if(p.result === "Ball") state.currentAB.balls++;
+  if(p.result === "Called Strike" || p.result === "Whiff") state.currentAB.strikes++;
+  if(p.result === "Foul" && state.currentAB.strikes < 2) state.currentAB.strikes++;
+  if(p.result === "HBP") { $("abResult").value = "HBP"; $("qab").value = "Yes"; $("qabReason").value = "Walk/HBP"; }
+  if(state.currentAB.balls >= 4) { $("abResult").value = "BB"; $("qab").value = "Yes"; $("qabReason").value = "Walk/HBP"; }
+  if(state.currentAB.strikes >= 3 && p.result !== "Foul") $("abResult").value = "K";
+}
+function undoCountFromPitch(p){
+  if(p.result === "Ball") state.currentAB.balls = Math.max(0,state.currentAB.balls-1);
+  if(p.result === "Called Strike" || p.result === "Whiff") state.currentAB.strikes = Math.max(0,state.currentAB.strikes-1);
+  if(p.result === "Foul" && state.currentAB.strikes > 0) state.currentAB.strikes = Math.max(0,state.currentAB.strikes-1);
+}
+function selectBtn(groupId, value){ document.querySelectorAll(`#${groupId} button`).forEach(b => b.classList.toggle("selected", b.dataset.value === value)); }
+function bindGroup(groupId, key){
+  document.querySelectorAll(`#${groupId} button`).forEach(btn => {
+    btn.addEventListener("click", () => {
+      pitchDraft[key] = btn.dataset.value;
+      selectBtn(groupId, pitchDraft[key]);
+      renderPitchPreview();
+    });
+  });
+}
+function clearPitchDraft(){
+  pitchDraft = { pitchType:"", zone:"", decision:"", result:"", contact:"" };
+  ["pitchTypeBtns","zoneBtns","decisionBtns","pitchResultBtns","contactBtns"].forEach(id => selectBtn(id,""));
+  renderPitchPreview();
+}
+function renderPitchPreview(){
+  const parts = [pitchDraft.pitchType, pitchDraft.zone, pitchDraft.decision, pitchDraft.result, pitchDraft.contact].filter(Boolean);
+  $("pitchPreview").textContent = parts.length ? "Ready: " + parts.join(" | ") : "Select pitch details.";
+}
+function renderSetup(){
+  $("gameDate").value = state.game.date || new Date().toISOString().slice(0,10);
+  $("gameOpponent").value = state.game.opponent || "";
+  $("teamName").value = state.game.team || "Panther Baseball";
+  if($("pitcherHand")) $("pitcherHand").value = state.game.pitcherHand || "";
+  $("lineupList").innerHTML = state.lineup.map((p,i) => `<div class="lineup-item ${i === state.currentIndex ? "active":""}"><div><strong>${i+1}. ${esc(p)}</strong>${i === state.currentIndex ? ' <span class="pill good">Current</span>':''}</div><button class="danger" onclick="removePlayer(${i})">Remove</button></div>`).join("") || `<p class="tiny">No players yet. Add your lineup here.</p>`;
+}
+function renderGame(){
+  $("currentHitterName").textContent = currentPlayer() || "No hitter selected";
+  $("currentGameInfo").textContent = `${state.game.team || "Panther Baseball"} vs ${state.game.opponent || "Opponent"} • ${state.game.date || ""} ${currentPitcherHand() ? "• AB: " + currentPitcherHand() : ""}`;
+  $("balls").textContent = state.currentAB.balls || 0;
+  $("strikes").textContent = state.currentAB.strikes || 0;
+  $("abPitchCount").textContent = state.currentAB.pitches.length;
+  $("hitterSelect").innerHTML = state.lineup.map((p,i) => `<option value="${i}">${i+1}. ${esc(p)}</option>`).join("");
+  $("hitterSelect").value = state.currentIndex;
+  if($("abPitcherHand") && $("endAbPitcherHand")){
+    const currentHand = $("abPitcherHand").value || $("endAbPitcherHand").value || "";
+    $("abPitcherHand").value = currentHand;
+    $("endAbPitcherHand").value = currentHand;
+  }
+  const tags = [];
+  state.currentAB.pitches.forEach(p => {
+    if(isChase(p)) tags.push("CHASE");
+    if(isTakeStrike(p)) tags.push("TAKE K");
+    if(p.pitchType === "FB" && isWhiff(p)) tags.push("FB MISS");
+    if(p.pitchType === "FB" && isFoul(p)) tags.push("FB FOUL");
+  });
+  $("autoTags").textContent = tags.length ? [...new Set(tags)].join(" / ") : "Live tags";
+  $("currentPitchLog").innerHTML = state.currentAB.pitches.map((p,i) => `<div class="mini-pitch"><strong>${i+1}.</strong> ${esc(p.pitchType)} • ${esc(p.zone)} • ${esc(p.decision)} • <strong>${esc(p.result)}</strong> ${p.contact ? "• " + esc(p.contact) : ""} ${p.countBefore ? `<div class="tiny">Count before: ${esc(p.countBefore)}</div>` : ""}<div style="margin-top:5px;">${isChase(p) ? '<span class="pill bad">Chase</span>' : ''} ${isTakeStrike(p) ? '<span class="pill warn">Take Strike</span>' : ''} ${p.pitchType === "FB" && isWhiff(p) ? '<span class="pill bad">FB Miss</span>' : ''} ${p.pitchType === "FB" && isFoul(p) ? '<span class="pill warn">FB Foul</span>' : ''} ${isHard(p) ? '<span class="pill good">Hard</span>' : ''}</div></div>`).join("") || `<p class="tiny">No pitches in this AB yet.</p>`;
+}
+function renderDugoutSummaryBar(){
+  const r = calcReport(state.abs);
+  const items = [["Chase %", fmtPct(r.chasePct)],["FB Miss %", fmtPct(r.fbWhiffPct)],["FB Foul %", fmtPct(r.fbFoulPct)],["Take Strike %", fmtPct(r.takeStrikePct)],["QAB %", fmtPct(r.qabPct)]];
+  $("dugoutSummaryBar").innerHTML = items.map(([l,n]) => `<div class="dugout-stat"><div class="lbl">${l}</div><div class="num">${n}</div></div>`).join("");
+}
+function renderReports(){
+
+  const players = [...new Set(state.abs.map(a => a.player).concat(state.lineup))].filter(Boolean);
+  const current = $("reportPlayer").value || "TEAM";
+  $("reportPlayer").innerHTML = `<option value="TEAM">Team</option>` + players.map(p => `<option>${esc(p)}</option>`).join("");
+  $("reportPlayer").value = players.includes(current) || current === "TEAM" ? current : "TEAM";
+  const nGames = Number($("recentWindow").value || 3);
+  const selectedABs = getFilteredABs($("reportPlayer").value);
+  const season = calcReport(selectedABs);
+  const recentList = recentABs(selectedABs, nGames);
+  const recent = calcReport(recentList);
+  const metrics = [["qabPct","QAB %","Higher is better"],["chasePct","Chase %","Lower is better"],["takeStrikePct","Take Strike %","Lower is better"],["whiffPct","Whiff %","Lower is better"],["foulPct","Foul %","Context stat"],["hardPct","Hard Contact %","Higher is better"],["fbWhiffPct","FB Miss %","Lower is better"],["fbFoulPct","FB Foul %","Lower is better"],["spinChasePct","Spin Chase %","Cutter/SL/CB chase"],["offspeedChasePct","Offspeed Chase %","CH/SPL chase"]];
+  $("trendRows").innerHTML = metrics.map(([key,label,read]) => { const t = trend(key, season[key], recent[key]); return `<tr><td><strong>${label}</strong></td><td>${fmtPct(season[key])}</td><td>${fmtPct(recent[key])}</td><td class="${t.cls}">${t.arrow}</td><td>${t.read} <span class="tiny">• ${read}</span></td></tr>`; }).join("") + `<tr><td><strong>Pitches / PA</strong></td><td>${season.pitchesPerPA.toFixed(1)}</td><td>${recent.pitchesPerPA.toFixed(1)}</td><td class="trend-neutral">➡️</td><td>Context stat</td></tr>`;
+  $("trendNote").textContent = `Selected view: ${$("reportPlayer").value === "TEAM" ? "Team" : $("reportPlayer").value}. Season games: ${uniqueGameDates(selectedABs).length || 0}. Recent window: ${uniqueGameDates(recentList).join(", ") || "no games yet"}.`;
+  const pitches = getAllPitches(selectedABs);
+  $("pitchBreakdown").innerHTML = ["FB","Cutter","SL","CB","CH","SPL"].map(t => { 
+    const arr = pitches.filter(p => p.pitchType === t); 
+    const out = arr.filter(p => p.zone === "OUT").length; 
+    const swings = arr.filter(isSwing).length; 
+    const avg = avgForSubset(selectedABs, p => p.pitchType === t);
+    return `<tr><td><strong>${t}</strong></td><td>${arr.length}</td><td>${fmtPct(pctValue(arr.filter(isChase).length,out))}</td><td>${fmtPct(pctValue(arr.filter(isWhiff).length,swings))}</td><td>${fmtPct(pctValue(arr.filter(isFoul).length,swings))}</td><td>${fmtPct(pctValue(arr.filter(isHard).length,arr.length))}</td><td><strong>${avg.avg}</strong> <span class="tiny">(${avg.h}/${avg.ab})</span></td></tr>`; 
+  }).join("");
+  const countOrder = ["0-0","1-0","0-1","2-0","1-1","0-2","2-1","1-2","3-0","2-2","3-1","3-2","Unknown"];
+  const countRows = countOrder.map(c => {
+    const avg = avgForSubset(selectedABs, p => countBucket(p.countBefore) === c);
+    return {count:c, ...avg};
+  }).filter(x => x.ab > 0 || x.count !== "Unknown");
+  $("countAvgRows").innerHTML = countRows.length ? countRows.map(x => `<tr><td><strong>${x.count}</strong></td><td>${x.h}</td><td>${x.ab}</td><td><strong>${x.avg}</strong></td></tr>`).join("") : `<tr><td colspan="4" class="tiny">No official at-bats yet.</td></tr>`;
+
+  $("playerSummary").innerHTML = players.map(p => { 
+    const all = getFilteredABs(p); 
+    const rSeason = calcReport(all); 
+    const rRecent = calcReport(recentABs(all,3)); 
+    const tq = trend("qabPct", rSeason.qabPct, rRecent.qabPct); 
+    const tc = trend("chasePct", rSeason.chasePct, rRecent.chasePct); 
+    const avg = avgForSubset(all, () => true);
+    return `<tr><td><strong>${esc(p)}</strong></td><td>${rSeason.pa}</td><td>${fmtPct(rSeason.qabPct)} / ${fmtPct(rRecent.qabPct)}</td><td>${fmtPct(rSeason.chasePct)} / ${fmtPct(rRecent.chasePct)}</td><td>${fmtPct(rSeason.fbWhiffPct)} / ${fmtPct(rRecent.fbWhiffPct)}</td><td>${fmtPct(rSeason.fbFoulPct)} / ${fmtPct(rRecent.fbFoulPct)}</td><td><strong>${avg.avg}</strong> <span class="tiny">(${avg.h}/${avg.ab})</span></td><td><span class="${tq.cls}">QAB ${tq.arrow}</span> <span class="${tc.cls}">Chase ${tc.arrow}</span></td></tr>`; 
+  }).join("") || `<tr><td colspan="8" class="tiny">No completed ABs yet.</td></tr>`;
+}
+function profileRead(playerName, season, recent){
+  const issues = [];
+  if(recent.chasePct >= season.chasePct + 5 && recent.chasePct >= 30) issues.push("chasing more recently");
+  if(recent.fbWhiffPct >= season.fbWhiffPct + 5 && recent.fbWhiffPct >= 20) issues.push("missing more fastballs");
+  if(recent.fbFoulPct >= season.fbFoulPct + 8 && recent.fbFoulPct >= 30) issues.push("fouling more fastballs");
+  if(recent.takeStrikePct >= season.takeStrikePct + 5 && recent.takeStrikePct >= 20) issues.push("taking more strikes");
+  if(recent.qabPct >= season.qabPct + 5) issues.push("QAB trend is improving");
+  return issues.length ? issues.slice(0,3).join(", ") + "." : "Stable profile lately. Keep collecting clean data.";
+}
+function renderProfiles(){
+  const nGames = Number($("profileWindow").value || 3);
+  const players = [...new Set(state.abs.map(a => a.player).concat(state.lineup))].filter(Boolean);
+  $("profileCards").innerHTML = players.map(p => { const all = getFilteredABs(p); const season = calcReport(all); const recent = calcReport(recentABs(all,nGames)); const tq = trend("qabPct", season.qabPct, recent.qabPct); const tc = trend("chasePct", season.chasePct, recent.chasePct); const tfb = trend("fbWhiffPct", season.fbWhiffPct, recent.fbWhiffPct); return `<div class="profile-card"><div class="profile-name">${esc(p)}</div><div class="tiny">PA: ${season.pa} season • ${recent.pa} recent</div><div class="profile-stats"><div class="profile-mini"><div class="lbl">QAB</div><div class="num">${fmtPct(season.qabPct)} <span class="${tq.cls}">${tq.arrow}</span></div></div><div class="profile-mini"><div class="lbl">Chase</div><div class="num">${fmtPct(season.chasePct)} <span class="${tc.cls}">${tc.arrow}</span></div></div><div class="profile-mini"><div class="lbl">FB Miss</div><div class="num">${fmtPct(season.fbWhiffPct)} <span class="${tfb.cls}">${tfb.arrow}</span></div></div><div class="profile-mini"><div class="lbl">FB Foul</div><div class="num">${fmtPct(season.fbFoulPct)}</div></div><div class="profile-mini"><div class="lbl">Take K</div><div class="num">${fmtPct(season.takeStrikePct)}</div></div><div class="profile-mini"><div class="lbl">P/PA</div><div class="num">${season.pitchesPerPA.toFixed(1)}</div></div></div>
+      <div class="table-wrap" style="margin-top:10px; max-height:220px;">
+        <table>
+          <thead><tr><th>Pitch</th><th>AVG</th></tr></thead>
+          <tbody>${["FB","Cutter","SL","CB","CH","SPL"].map(pt => { const a = avgForSubset(all, tp => tp.pitchType === pt); return `<tr><td>${pt}</td><td><strong>${a.avg}</strong> <span class="tiny">(${a.h}/${a.ab})</span></td></tr>`; }).join("")}</tbody>
+        </table>
+      </div>
+      <div class="table-wrap" style="margin-top:10px; max-height:220px;">
+        <table>
+          <thead><tr><th>Count</th><th>AVG</th></tr></thead>
+          <tbody>${["0-0","1-0","0-1","2-0","1-1","0-2","2-1","1-2","3-0","2-2","3-1","3-2"].map(ct => { const a = avgForSubset(all, tp => countBucket(tp.countBefore) === ct); return `<tr><td>${ct}</td><td><strong>${a.avg}</strong> <span class="tiny">(${a.h}/${a.ab})</span></td></tr>`; }).join("")}</tbody>
+        </table>
+      </div>
+      <div class="tiny" style="margin-top:8px"><strong>Read:</strong> ${esc(profileRead(p,season,recent))}</div></div>`; }).join("") || `<p class="tiny">No player data yet. Add hitters and log ABs to build profiles.</p>`;
+}
+function renderLogs(){
+  $("abLog").innerHTML = state.abs.slice().reverse().map(ab => `<div class="ab-card"><div class="flex-between"><div><strong>${esc(ab.player)}</strong> vs ${esc(ab.opponent || state.game.opponent)} — <strong>${esc(ab.result)}</strong> ${ab.qab === "Yes" ? '<span class="pill good">QAB</span>' : '<span class="pill bad">No QAB</span>'} ${ab.qabReason ? `<span class="pill">${esc(ab.qabReason)}</span>` : ''}</div><button class="danger" onclick="deleteAB('${ab.id}')">Delete</button></div><div class="tiny">Date: ${esc(ab.gameDate || ab.date)} • ${ab.pitcherHand ? esc(ab.pitcherHand) + " • " : ""}Pitches: ${ab.pitches.length} • RBI: ${ab.rbi || 0} ${ab.notes ? "• " + esc(ab.notes) : ""}</div></div>`).join("") || `<p class="tiny">No completed ABs yet.</p>`;
+}
+function renderAll(){ renderSetup(); renderGame(); renderDugoutSummaryBar(); renderReports(); renderProfiles();
+
+  const pitchTypes = ["FB","Cutter","SL","CB","CH","SPL"];
+  const countBuckets = ["0-0","1-0","0-1","2-0","1-1","0-2","2-1","1-2","3-0","2-2","3-1","3-2"];
+
+  $("pitchCountMatrix").innerHTML = pitchTypes.map(pt => {
+    const rows = countBuckets.map(ct => {
+      const avg = avgForSubset(selectedABs, p => p.pitchType === pt && countBucket(p.countBefore) === ct);
+      if(avg.ab === 0) return "";
+      let color = "";
+      if(avg.ab >= 5){
+        if(parseFloat(avg.avg) >= .300) color = "style='color:green;font-weight:900'";
+        if(parseFloat(avg.avg) <= .150) color = "style='color:red;font-weight:900'";
+      }
+      return `<div class="tiny">${ct}: <span ${color}>${avg.avg}</span> (${avg.h}/${avg.ab})</div>`;
+    }).join("");
+
+    return `<div class="card" style="margin-top:10px">
+      <strong>${pt}</strong>
+      <div style="margin-top:6px">${rows || "<span class='tiny'>No data</span>"}</div>
+    </div>`;
+  }).join("");
+ renderLogs(); }
+
+function exportCSV(filename, headers, rows){ const csv = [headers.join(","), ...rows.map(r => headers.map(h => `"${String(r[h] ?? "").replaceAll('"','""')}"`).join(","))].join("\n"); const blob = new Blob([csv], {type:"text/csv"}); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url); }
+window.removePlayer = function(i){ if(confirm("Remove player from lineup? Existing AB logs stay saved.")) { state.lineup.splice(i,1); state.currentIndex = Math.min(state.currentIndex, Math.max(0,state.lineup.length-1)); saveState(); renderAll(); } }
+window.deleteAB = function(id){ if(confirm("Delete this completed AB?")) { state.abs = state.abs.filter(a => a.id !== id); saveState(); renderAll(); } }
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => {
+    const page = tab.dataset.page;
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(page).classList.add("active");
+    renderAll();
+  }));
+  bindGroup("pitchTypeBtns","pitchType"); bindGroup("zoneBtns","zone"); bindGroup("decisionBtns","decision"); bindGroup("pitchResultBtns","result"); bindGroup("contactBtns","contact");
+  $("savePitchBtn").addEventListener("click", () => {
+    if(!currentPlayer()) return alert("Add/select a hitter first.");
+    if(!pitchDraft.pitchType || !pitchDraft.zone || !pitchDraft.decision || !pitchDraft.result) return alert("Need pitch type, zone, decision, and result.");
+    if(["Foul","Whiff","In Play"].includes(pitchDraft.result) && !pitchDraft.contact) pitchDraft.contact = pitchDraft.result === "Whiff" ? "None" : "";
+    const p = { ...pitchDraft, id: uid(), timestamp: new Date().toISOString(), countBefore: `${state.currentAB.balls}-${state.currentAB.strikes}` };
+    state.currentAB.pitches.push(p); updateCountFromPitch(p);
+    if(state.currentAB.pitches.length >= 6 && $("qab").value !== "Yes") { $("qab").value = "Yes"; $("qabReason").value = "6+ Pitch AB"; }
+    if(p.contact === "Hard" && $("qab").value !== "Yes") { $("qab").value = "Yes"; $("qabReason").value = "Hard Contact"; }
+    saveState(); clearPitchDraft(); renderAll();
+  });
+  $("undoPitchBtn").addEventListener("click", () => { const p = state.currentAB.pitches.pop(); if(p) { undoCountFromPitch(p); saveState(); renderAll(); } });
+  $("clearPitchBtn").addEventListener("click", clearPitchDraft);
+  $("endAbBtn").addEventListener("click", () => {
+    if(!currentPlayer()) return alert("No hitter selected.");
+    if(state.currentAB.pitches.length === 0) return alert("No pitches logged for this AB.");
+    const result = $("abResult").value; if(!result) return alert("Choose an AB result.");
+    state.abs.push({ id:uid(), gameDate:state.game.date, opponent:state.game.opponent, team:state.game.team, pitcherHand:currentPitcherHand(), player:currentPlayer(), lineupIndex:state.currentIndex, pitches:state.currentAB.pitches, result, qab:$("qab").value, qabReason:$("qabReason").value, rbi:Number($("rbi").value||0), notes:$("abNotes").value.trim(), endedAt:new Date().toISOString() });
+    state.currentAB = { pitches: [], balls: 0, strikes: 0 };
+    $("abResult").value=""; $("qab").value="No"; $("qabReason").value=""; $("rbi").value=0; $("abNotes").value="";
+    if(state.lineup.length) state.currentIndex = (state.currentIndex + 1) % state.lineup.length;
+    saveState(); renderAll();
+  });
+  $("discardAbBtn").addEventListener("click", () => { if(confirm("Discard current AB pitches?")) { state.currentAB = { pitches: [], balls: 0, strikes: 0 }; saveState(); renderAll(); } });
+  $("prevHitterBtn").addEventListener("click", () => { if(state.lineup.length) { state.currentIndex = (state.currentIndex - 1 + state.lineup.length) % state.lineup.length; saveState(); renderAll(); } });
+  $("nextHitterBtn").addEventListener("click", () => { if(state.lineup.length) { state.currentIndex = (state.currentIndex + 1) % state.lineup.length; saveState(); renderAll(); } });
+  $("hitterSelect").addEventListener("change", e => { state.currentIndex = Number(e.target.value); saveState(); renderAll(); });
+  $("abPitcherHand").addEventListener("change", e => { $("endAbPitcherHand").value = e.target.value; renderGame(); });
+  $("endAbPitcherHand").addEventListener("change", e => { $("abPitcherHand").value = e.target.value; renderGame(); });
+  $("saveGameInfoBtn").addEventListener("click", () => { state.game.date = $("gameDate").value; state.game.opponent = $("gameOpponent").value.trim(); state.game.team = $("teamName").value.trim() || "Panther Baseball";
+state.game.pitcherHand = $("pitcherHand").value; saveState(); renderAll(); });
+  $("addPlayerBtn").addEventListener("click", () => { const name = $("newPlayer").value.trim(); if(name) { state.lineup.push(name); $("newPlayer").value=""; saveState(); renderAll(); } });
+  $("loadSampleBtn").addEventListener("click", () => { state.lineup = ["Batter 1","Batter 2","Batter 3","Batter 4","Batter 5","Batter 6","Batter 7","Batter 8","Batter 9"]; state.currentIndex=0; saveState(); renderAll(); });
+  $("reportPlayer").addEventListener("change", renderReports); $("recentWindow").addEventListener("change", renderReports); $("profileWindow").addEventListener("change", renderProfiles);
+  $("exportPitchesBtn").addEventListener("click", () => {
+    const rows = state.abs.flatMap(ab => ab.pitches.map((p,i) => ({gameDate:ab.gameDate||ab.date,team:ab.team,opponent:ab.opponent,pitcherHand:ab.pitcherHand,player:ab.player,abResult:ab.result,pitchNo:i+1,countBefore:p.countBefore,pitchType:p.pitchType,zone:p.zone,decision:p.decision,pitchResult:p.result,contact:p.contact,chase:isChase(p)?"Yes":"No",takeStrike:isTakeStrike(p)?"Yes":"No",fbWhiff:p.pitchType==="FB"&&isWhiff(p)?"Yes":"No",fbFoul:p.pitchType==="FB"&&isFoul(p)?"Yes":"No"})));
+    exportCSV("panther_pitch_log.csv", ["gameDate","team","opponent","pitcherHand","player","abResult","pitchNo","countBefore","pitchType","zone","decision","pitchResult","contact","chase","takeStrike","fbWhiff","fbFoul"], rows);
+  });
+  $("exportAbsBtn").addEventListener("click", () => {
+    const rows = state.abs.map(ab => ({gameDate:ab.gameDate||ab.date,team:ab.team,opponent:ab.opponent,pitcherHand:ab.pitcherHand,player:ab.player,result:ab.result,pitches:ab.pitches.length,qab:ab.qab,qabReason:ab.qabReason,rbi:ab.rbi,notes:ab.notes}));
+    exportCSV("panther_ab_log.csv", ["gameDate","team","opponent","pitcherHand","player","result","pitches","qab","qabReason","rbi","notes"], rows);
+  });
+  $("clearGameBtn").addEventListener("click", () => { if(confirm("Clear ALL season data, lineup, current AB, and logs? Export first if you want a backup.")) { state = JSON.parse(JSON.stringify(DEFAULT)); saveState(); renderAll(); } });
+  renderAll(); renderPitchPreview();
+});
+</script>
+</body>
+</html>
